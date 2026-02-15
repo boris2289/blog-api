@@ -17,13 +17,29 @@ Including another URLconf
 from django.http import HttpResponse
 from django.contrib import admin
 from django.urls import path
-
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenVerifyView
+from rest_framework.routers import DefaultRouter
+from apps.users.views import RegisterViewSet
+from django.urls import path, include
+from apps.blog.views import PostViewSet
+from apps.users.views import CustomTokenView
 
 def home(request):
     return HttpResponse("OK")
 
 
+router = DefaultRouter()
+router.register(r"posts", PostViewSet, basename='posts')
+
 urlpatterns = [
     path("", home),
     path("admin/", admin.site.urls),
+
+    path("api/auth/register/", RegisterViewSet.as_view({"post": "create"}), name="register"),
+
+    path("api/auth/token/", CustomTokenView.as_view(), name="token_obtain_pair"),
+    path('api/auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('api/auth/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
+
+    path("api/", include(router.urls))  # берем роунты
 ]

@@ -1,2 +1,5 @@
 Django
 python-decouple
+djangorestframework-simplejwt
+django-redis
+django-ratelimit
