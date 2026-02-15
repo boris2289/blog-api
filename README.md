@@ -1,1 +1,1 @@
-![ERD Diagram](docs/images/erd.png)
+![ERD Diagram](docs/images/ERD.png)
