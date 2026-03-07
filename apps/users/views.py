@@ -1,3 +1,4 @@
+from django.utils.decorators import method_decorator
 from rest_framework import viewsets, status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -15,29 +16,31 @@ logger = logging.getLogger("users")
 class RegisterViewSet(viewsets.ViewSet):
     permission_classes = [AllowAny]
 
-    @ratelimit(key='ip', rate='5/m', method='POST', block=False)
+    @method_decorator(ratelimit(key="ip", rate="5/m", method="POST", block=True))
     def create(self, request):
-        logger.info("Registration attemp for email: %s", request.data.get("email"))
-        serializer = RegisterSerializer(data=request.data)
+        logger.info("Registration attempt for email: %s", request.data.get("email"))
 
-        if not serializer.is_valid():
-            logger.warning("Registration failed: %s", serializer.errors)
+        serializer = RegisterSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
         user = serializer.save()
         logger.info("User registered successfully: %s", user.email)
 
         refresh = RefreshToken.for_user(user)
-        # Придумать кастом
-        return Response({
-            "user": {
-                "id": user.id,
-                "email": user.email,
-                "first_name": user.first_name,
-                "last_name": user.last_name
+
+        return Response(
+            {
+                "user": {
+                    "id": user.id,
+                    "email": user.email,
+                    "first_name": user.first_name,
+                    "last_name": user.last_name,
+                },
+                "refresh": str(refresh),
+                "access": str(refresh.access_token),
             },
-            "refresh": str(refresh),
-            "access": str(refresh.access_token)
-        }, status=status.HTTP_201_CREATED)
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
