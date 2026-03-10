@@ -1,0 +1,624 @@
+{
+  "info": {
+    "name": "Blog API HW2 Local",
+    "_postman_id": "f2b67f4f-7e09-4fe2-9b8d-9f6f7a5c1111",
+    "description": "Postman collection for testing Blog API Homework 2 on local host.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000"
+    },
+    {
+      "key": "access_token",
+      "value": ""
+    },
+    {
+      "key": "refresh_token",
+      "value": ""
+    },
+    {
+      "key": "post_slug",
+      "value": "my-first-post"
+    },
+    {
+      "key": "category_id",
+      "value": "1"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register RU User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/register/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"hw2test1@kbtu.kz\",\n  \"first_name\": \"Boris\",\n  \"last_name\": \"Dubovoy\",\n  \"password\": \"testpass123\",\n  \"password_valid\": \"testpass123\",\n  \"preferred_language\": \"ru\",\n  \"timezone\": \"Asia/Almaty\"\n}"
+            },
+            "description": "Creates a user with Russian language and Asia/Almaty timezone."
+          }
+        },
+        {
+          "name": "Register KK User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/register/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"hw2test2@kbtu.kz\",\n  \"first_name\": \"Aruzhan\",\n  \"last_name\": \"Test\",\n  \"password\": \"testpass123\",\n  \"password_valid\": \"testpass123\",\n  \"preferred_language\": \"kk\",\n  \"timezone\": \"Asia/Almaty\"\n}"
+            },
+            "description": "Creates a user with Kazakh language and Asia/Almaty timezone."
+          }
+        },
+        {
+          "name": "Register Invalid Timezone",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/register/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"badtimezone@kbtu.kz\",\n  \"first_name\": \"Bad\",\n  \"last_name\": \"Timezone\",\n  \"password\": \"testpass123\",\n  \"password_valid\": \"testpass123\",\n  \"preferred_language\": \"ru\",\n  \"timezone\": \"Almaty\"\n}"
+            },
+            "description": "Should return 400 because timezone is not a valid IANA identifier."
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const jsonData = pm.response.json();",
+                  "if (jsonData.access) { pm.collectionVariables.set('access_token', jsonData.access); }",
+                  "if (jsonData.refresh) { pm.collectionVariables.set('refresh_token', jsonData.refresh); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/token/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "token",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"hw2test1@kbtu.kz\",\n  \"password\": \"testpass123\"\n}"
+            },
+            "description": "Gets JWT tokens and saves them to collection variables."
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/token/refresh/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "token",
+                "refresh",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh\": \"{{refresh_token}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Verify Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/token/verify/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "token",
+                "verify",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{access_token}}\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "User Preferences",
+      "item": [
+        {
+          "name": "Get Preferences",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/me/preferences/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "me",
+                "preferences",
+                ""
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Language to KK",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/me/language/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "me",
+                "language",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"preferred_language\": \"kk\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Language to RU",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/me/language/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "me",
+                "language",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"preferred_language\": \"ru\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Timezone to Asia/Almaty",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/me/timezone/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "me",
+                "timezone",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"timezone\": \"Asia/Almaty\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Timezone Invalid",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/me/timezone/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "me",
+                "timezone",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"timezone\": \"Almaty\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Posts",
+      "item": [
+        {
+          "name": "List Posts Default",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/posts/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "posts",
+                ""
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Posts RU Query Param",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/posts/?lang=ru",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "posts",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "lang",
+                  "value": "ru"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Posts KK Query Param",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/posts/?lang=kk",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "posts",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "lang",
+                  "value": "kk"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Posts Accept-Language RU",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept-Language",
+                "value": "ru"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/posts/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "posts",
+                ""
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Posts Accept-Language KK",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept-Language",
+                "value": "kk"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/posts/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "posts",
+                ""
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Post",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/posts/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "posts",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"My first post\",\n  \"slug\": \"my-first-post\",\n  \"body\": \"Hello from hw2 post.\",\n  \"category_id\": 1,\n  \"tags\": [],\n  \"status\": \"published\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Post Detail",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/posts/{{post_slug}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "posts",
+                "{{post_slug}}",
+                ""
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Post Detail RU",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/posts/{{post_slug}}/?lang=ru",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "posts",
+                "{{post_slug}}",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "lang",
+                  "value": "ru"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Post",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/posts/{{post_slug}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "posts",
+                "{{post_slug}}",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"My first post updated\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Post",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/posts/{{post_slug}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "posts",
+                "{{post_slug}}",
+                ""
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

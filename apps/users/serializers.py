@@ -55,7 +55,7 @@ class RegisterSerializer(serializers.Serializer):
         password = validated_data.pop("password")
 
         preferred_language = validated_data.pop("preferred_language", None)
-        timezone_value = validated_data.pop("timezone_value", None)
+        timezone_value = validated_data.pop("timezone", None)
 
         if not preferred_language:
             preferred_language = getattr(request, "LANGUAGE_CODE", settings.LANGUAGE_CODE)
