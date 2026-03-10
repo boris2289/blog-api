@@ -1,5 +1,5 @@
 from django.db.models import EmailField, CharField, BooleanField, DateTimeField, ImageField
-
+from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
 
 
@@ -22,9 +22,20 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractBaseUser, PermissionsMixin):
+    class LanguageChoices:
+        EN = "en"
+        RU = "ru"
+        KK = "kk"
+        CHOICES = (
+            (EN, "English"),
+            (RU, "Russian"),
+            (KK, "Kazakh")
+        )
     email = EmailField(unique=True)
     first_name = CharField(max_length=50)  # required
     last_name = CharField(max_length=50)  # required
+    preferred_language = CharField(max_length=2, choices=LanguageChoices.CHOICES, default=LanguageChoices.EN,)
+    timezone = CharField(max_length=64, default="UTC")
     is_active = BooleanField(default=True)
     is_staff = BooleanField(default=False)
     date_joined = DateTimeField(auto_now_add=True)
