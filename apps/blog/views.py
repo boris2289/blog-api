@@ -1,18 +1,43 @@
+import logging
+import json
+
 from django.core.cache import cache
 from django.utils.decorators import method_decorator
 from django.utils.translation import gettext as _
 from django_ratelimit.decorators import ratelimit
-from rest_framework import permissions, viewsets
+from django_redis import get_redis_connection
+from drf_spectacular.utils import (
+    OpenApiExample,
+    OpenApiParameter,
+    OpenApiResponse,
+    extend_schema,
+    extend_schema_view
+)
+from rest_framework import permissions, viewsets, serializers
 from rest_framework.response import Response
 
 from .models import Post
 from .permissions import IsOwnerorReadOnly
 from .serializers import PostSerializer
 
-import logging
-
 logger = logging.getLogger("blog")
 POSTS_LIST_CACHE_TTL = 60
+
+
+class RateLimitErrorSerializer(serializers.Serializer):
+    detail = serializers.CharField()
+
+
+class UnauthorizedErrorSerializer(serializers.Serializer):
+    detail = serializers.CharField()
+
+
+class ForbiddenErrorSerializer(serializers.Serializer):
+    detail = serializers.CharField()
+
+
+class NotFoundErrorSerializer(serializers.Serializer):
+    detail = serializers.CharField()
 
 
 def build_posts_list_cache_key(request):
@@ -30,6 +55,250 @@ def invalidate_posts_list_cache():
                 cache.delete(f"posts:list:published:{language}:page:{page}")
 
 
+@extend_schema_view(
+    list=extend_schema(
+        tags=["Posts"],
+        summary="List published posts",
+        description=(
+                "Returns a paginated list of posts. "
+                "Authentication is not required"
+                "The response in cached in Redis per active language and page. "
+                "Examples: English and Russian users receive separate cache entries. "
+                "Dates and category translations depend on the active language/timezone logic already configured"
+        ),
+        parameters=[
+            OpenApiParameter(
+                name="lang",
+                description="Optional language override",
+                required=False,
+                type=str,
+                location=OpenApiParameter.QUERY
+            ),
+            OpenApiParameter(
+                name="page",
+                description="Pagination page number. ",
+                required=False,
+                type=int,
+                location=OpenApiParameter.QUERY
+            )
+        ],
+        responses={
+            200: OpenApiResponse(
+                response=PostSerializer(many=True),
+                description="Published posts list returned succesfully."
+            ),
+        },
+        examples=[
+            OpenApiExample(
+                "List posts request",
+                value=None,
+                request_only=True,
+            ),
+            OpenApiExample(
+                "List posts response",
+                value={
+                    "count": 1,
+                    "next": None,
+                    "previous": None,
+                    "results": [
+                        {
+                            "author": 1,
+                            "title": "My first post",
+                            "slug": "my-first_post",
+                            "body": "Hello from hw1 post",
+                            "category": {
+                                "id": 1,
+                                "slug": "news",
+                                "name": "Новости"
+                            },
+                            "tags": [],
+                            "status": "published",
+                            "created_at": "7 march 2026 15:00",
+                            "updated_at": "7 march 2026 15:10",
+                        }
+                    ]
+                },
+                response_only=True
+            ),
+        ],
+    ),
+    retrieve=extend_schema(
+        tags=["Posts"],
+        summary="Retrieve published post by slug",
+        description=(
+                "Returns one published post by slug. "
+                "Authentication is not required"
+                "Language-sensitive fields such as localized category name and formatted dates depend on active lang/timezone. "
+        ),
+        parameters=[
+            OpenApiParameter(
+                name="lang",
+                description="Optional language override",
+                required=False,
+                type=str,
+                location=OpenApiParameter.QUERY
+            ),
+        ],
+        responses={
+            200: PostSerializer,
+            404: OpenApiResponse(response=NotFoundErrorSerializer, description="Post not found. ")
+        },
+        examples=[
+            OpenApiExample(
+                "Retrieve post response",
+                value={
+                    "author": 1,
+                    "title": "My first post",
+                    "slug": "my-first_post",
+                    "body": "Hello from hw1 post",
+                    "category": {
+                        "id": 1,
+                        "slug": "news",
+                        "name": "Новости"
+                    },
+                    "tags": [],
+                    "status": "published",
+                    "created_at": "7 march 2026 15:00",
+                    "updated_at": "7 march 2026 15:10",
+                },
+                request_only=True,
+            ),
+        ],
+    ),
+    create=extend_schema(
+        tags=["Posts"],
+        summary="Create a post",
+        description=(
+                "Creates a new post. Authentication is required. "
+                "The authenticated user becomes the author automatically. "
+                "This endpoint invalidates the Redis posts list cache for all languages after a successful write. "
+                "Rate limiting is applied."
+        ),
+        request=PostSerializer,
+        responses={
+            201: PostSerializer,
+            400: OpenApiResponse(response=PostSerializer, description="Validation error."),
+            401: OpenApiResponse(response=UnauthorizedErrorSerializer, description="Authentication required."),
+            403: OpenApiResponse(response=ForbiddenErrorSerializer, description="Permission denied."),
+            429: OpenApiResponse(response=RateLimitErrorSerializer, description="Too many requests."),
+        },
+        examples=[
+            OpenApiExample(
+                "Create post request",
+                value={
+                    "title": "My first post",
+                    "slug": "my-first-post",
+                    "body": "Hello from hw2 post.",
+                    "category_id": 1,
+                    "tags": [],
+                    "status": "published"
+                },
+                request_only=True,
+            ),
+            OpenApiExample(
+                "Create post response",
+                value={
+                    "author": 1,
+                    "title": "My first post",
+                    "slug": "my-first-post",
+                    "body": "Hello from hw2 post.",
+                    "category": {
+                        "id": 1,
+                        "slug": "news",
+                        "name": "News"
+                    },
+                    "tags": [],
+                    "status": "published",
+                    "created_at": "March 7, 2026, 15:00",
+                    "updated_at": "March 7, 2026, 15:00"
+                },
+                response_only=True,
+            ),
+        ],
+    ),
+    partial_update=extend_schema(
+        tags=["Posts"],
+        summary="Partially update a post",
+        description=(
+                "Updates selected fields of a post by slug. Authentication is required. "
+                "Only the owner may modify the post. "
+                "Any successful write invalidates the Redis posts list cache for all languages."
+        ),
+        request=PostSerializer,
+        responses={
+            200: PostSerializer,
+            400: OpenApiResponse(response=PostSerializer, description="Validation error."),
+            401: OpenApiResponse(response=UnauthorizedErrorSerializer, description="Authentication required."),
+            403: OpenApiResponse(response=ForbiddenErrorSerializer, description="Permission denied."),
+            404: OpenApiResponse(response=NotFoundErrorSerializer, description="Post not found."),
+        },
+        examples=[
+            OpenApiExample(
+                "Patch post request",
+                value={"title": "My first post updated"},
+                request_only=True,
+            ),
+            OpenApiExample(
+                "Patch post response",
+                value={
+                    "author": 1,
+                    "title": "My first post updated",
+                    "slug": "my-first-post",
+                    "body": "Hello from hw2 post.",
+                    "category": {
+                        "id": 1,
+                        "slug": "news",
+                        "name": "News"
+                    },
+                    "tags": [],
+                    "status": "published",
+                    "created_at": "March 7, 2026, 15:00",
+                    "updated_at": "March 7, 2026, 15:10"
+                },
+                response_only=True,
+            ),
+        ],
+    ),
+    update=extend_schema(
+        tags=["Posts"],
+        summary="Fully update a post",
+        description=(
+                "Replaces a post by slug. Authentication is required. "
+                "Only the owner may modify the post. "
+                "Any successful write invalidates the Redis posts list cache for all languages."
+        ),
+        request=PostSerializer,
+        responses={
+            200: PostSerializer,
+            400: OpenApiResponse(response=PostSerializer, description="Validation error."),
+            401: OpenApiResponse(response=UnauthorizedErrorSerializer, description="Authentication required."),
+            403: OpenApiResponse(response=ForbiddenErrorSerializer, description="Permission denied."),
+            404: OpenApiResponse(response=NotFoundErrorSerializer, description="Post not found."),
+        },
+    ),
+    destroy=extend_schema(
+        tags=["Posts"],
+        summary="Delete a post",
+        description=(
+                "Deletes a post by slug. Authentication is required. "
+                "Only the owner may delete the post. "
+                "Successful deletion invalidates the Redis posts list cache for all languages."
+        ),
+        responses={
+            204: OpenApiResponse(description="Post deleted successfully."),
+            401: OpenApiResponse(response=UnauthorizedErrorSerializer, description="Authentication required."),
+            403: OpenApiResponse(response=ForbiddenErrorSerializer, description="Permission denied."),
+            404: OpenApiResponse(response=NotFoundErrorSerializer, description="Post not found."),
+        },
+        examples=[
+            OpenApiExample(
+                "Delete response",
+                value=None,
+                response_only=True,
+            ),
+        ],
+    )
+)
 class PostViewSet(viewsets.ModelViewSet):
     serializer_class = PostSerializer
     lookup_field = "slug"
@@ -84,3 +353,13 @@ class PostViewSet(viewsets.ModelViewSet):
         logger.warning("Post deleted: %s by %s", instance.slug, self.request.user.email)
         instance.delete()
         invalidate_posts_list_cache()
+
+
+def publish_comments_event(comment):
+    conn = get_redis_connection("default")
+    payload = {
+        "event": "comment_created",
+        "author": comment.author.email,
+        "created_at": str(comment.created_at),
+    }
+    conn.publish("comments", json.dumps(payload))

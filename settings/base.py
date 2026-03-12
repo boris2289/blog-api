@@ -33,6 +33,8 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     'apps.blog',
     'apps.users',
+    "drf_spectacular",
+    "rest_framework",
 ]
 
 MIDDLEWARE = [
@@ -85,8 +87,26 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 100,
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Blog API",
+    "DESCRIPTION": "Blog API documentation for homework 2.",
+    "VERSION": "2.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "COMPONENT_SPLIT_REQUEST": True,
+    "SWAGGER_UI_SETTINGS": {
+        "deepLinking": True,
+        "displayRequestDuration": True,
+    },
+    "TAGS": [
+        {"name": "Auth", "description": "Authentication and user registration endpoints."},
+        {"name": "Posts", "description": "Blog post endpoints."},
+        {"name": "Comments", "description": "Comment endpoints."},
+        {"name": "Stats", "description": "Statistics endpoints."},
+    ],
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
