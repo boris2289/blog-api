@@ -1,0 +1,64 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: blog_api\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "Email"
+msgstr "Электронная почта"
+
+msgid "First name"
+msgstr "Имя"
+
+msgid "Last name"
+msgstr "Фамилия"
+
+msgid "Password"
+msgstr "Пароль"
+
+msgid "Password confirmation"
+msgstr "Подтверждение пароля"
+
+msgid "Preferred language"
+msgstr "Предпочитаемый язык"
+
+msgid "Timezone"
+msgstr "Часовой пояс"
+
+msgid "Email is required"
+msgstr "Электронная почта обязательна"
+
+msgid "User with this email already exists."
+msgstr "Пользователь с таким email уже существует."
+
+msgid "Passwords do not match."
+msgstr "Пароли не совпадают."
+
+msgid "Invalid timezone. Use a valid IANA timezone name, for example: Asia/Almaty."
+msgstr "Неверный часовой пояс. Используй корректный IANA timezone, например: Asia/Almaty."
+
+msgid "Registration successful."
+msgstr "Регистрация прошла успешно."
+
+msgid "Preferred language updated successfully."
+msgstr "Предпочитаемый язык успешно обновлен."
+
+msgid "Timezone updated successfully."
+msgstr "Часовой пояс успешно обновлен."
+
+msgid "Too many requests. Try again later."
+msgstr "Слишком много запросов. Попробуй позже."
+
+msgid "Welcome to Blog API"
+msgstr "Добро пожаловать в Blog API"
+
+msgid "Hello %(first_name)s,"
+msgstr "Здравствуйте, %(first_name)s,"
+
+msgid "Thank you for registering in Blog API."
+msgstr "Спасибо за регистрацию в Blog API."
+
+msgid "We are glad to see you here."
+msgstr "Мы рады видеть вас здесь."

@@ -1,45 +1,47 @@
-"""
-URL configuration for settings project.
-
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/5.1/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
-"""
-from django.http import HttpResponse
 from django.contrib import admin
-from django.urls import path
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenVerifyView
+from django.http import HttpResponse
+from django.urls import include, path
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 from rest_framework.routers import DefaultRouter
-from apps.users.views import RegisterViewSet
-from django.urls import path, include
+from rest_framework_simplejwt.views import TokenRefreshView, TokenVerifyView
+from apps.users.token_views import DocumentedTokenRefreshView, DocumentedTokenVerifyView
 from apps.blog.views import PostViewSet
-from apps.users.views import CustomTokenView
+from apps.users.views import (
+    CustomTokenView,
+    RegisterViewSet,
+    UserLanguageView,
+    UserPreferencesView,
+    UserTimezoneView,
+)
+from apps.blog.stat_views import stats_view
+
 
 def home(request):
     return HttpResponse("OK")
 
 
 router = DefaultRouter()
-router.register(r"posts", PostViewSet, basename='posts')
+router.register(r"posts", PostViewSet, basename="posts")
 
 urlpatterns = [
     path("", home),
     path("admin/", admin.site.urls),
 
+    path("api/schema/", SpectacularAPIView.as_view(), name='schema'),
+    path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name='swagger-ui'),
+    path("api/redoc/", SpectacularRedocView.as_view(url_name="schema"), name='redoc'),
+
     path("api/auth/register/", RegisterViewSet.as_view({"post": "create"}), name="register"),
-
     path("api/auth/token/", CustomTokenView.as_view(), name="token_obtain_pair"),
-    path('api/auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('api/auth/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
+    path("api/auth/token/refresh/", DocumentedTokenRefreshView.as_view(), name="token_refresh"),
+    path("api/auth/token/verify/", DocumentedTokenVerifyView.as_view(), name="token_verify"),
 
-    path("api/", include(router.urls))  # берем роунты
+    path("api/me/preferences/", UserPreferencesView.as_view(), name="user_preferences"),
+    path("api/auth/language/", UserLanguageView.as_view(), name="user_language"),
+    path("api/auth/timezone/", UserTimezoneView.as_view(), name="user_timezone"),
+    path("api/me/language/", UserLanguageView.as_view(), name="user_language_legacy"),
+    path("api/me/timezone/", UserTimezoneView.as_view(), name="user_timezone_legacy"),
+
+    path("api/", include(router.urls)),
+    path("api/stats/", stats_view, name="stats"),
 ]

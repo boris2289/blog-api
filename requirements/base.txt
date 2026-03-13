@@ -1,5 +1,9 @@
 Django
 python-decouple
+djangorestframework
 djangorestframework-simplejwt
 django-redis
 django-ratelimit
+Pillow
+drf-spectacular
+httpx

@@ -1,0 +1,64 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: blog_api\n"
+"Language: kk\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "Email"
+msgstr "Электрондық пошта"
+
+msgid "First name"
+msgstr "Аты"
+
+msgid "Last name"
+msgstr "Тегі"
+
+msgid "Password"
+msgstr "Құпия сөз"
+
+msgid "Password confirmation"
+msgstr "Құпия сөзді растау"
+
+msgid "Preferred language"
+msgstr "Таңдаулы тіл"
+
+msgid "Timezone"
+msgstr "Уақыт белдеуі"
+
+msgid "Email is required"
+msgstr "Электрондық пошта міндетті"
+
+msgid "User with this email already exists."
+msgstr "Осындай email-пен қолданушы бұрыннан бар."
+
+msgid "Passwords do not match."
+msgstr "Құпия сөздер сәйкес келмейді."
+
+msgid "Invalid timezone. Use a valid IANA timezone name, for example: Asia/Almaty."
+msgstr "Қате уақыт белдеуі. Дұрыс IANA timezone атауын қолданыңыз, мысалы: Asia/Almaty."
+
+msgid "Registration successful."
+msgstr "Тіркелу сәтті аяқталды."
+
+msgid "Preferred language updated successfully."
+msgstr "Таңдаулы тіл сәтті жаңартылды."
+
+msgid "Timezone updated successfully."
+msgstr "Уақыт белдеуі сәтті жаңартылды."
+
+msgid "Too many requests. Try again later."
+msgstr "Сұраулар тым көп. Кейінірек қайталап көріңіз."
+
+msgid "Welcome to Blog API"
+msgstr "Blog API-ге қош келдіңіз"
+
+msgid "Hello %(first_name)s,"
+msgstr "Сәлем, %(first_name)s,"
+
+msgid "Thank you for registering in Blog API."
+msgstr "Blog API-де тіркелгеніңіз үшін рақмет."
+
+msgid "We are glad to see you here."
+msgstr "Сізді осында көргенімізге қуаныштымыз."
