@@ -37,8 +37,10 @@ urlpatterns = [
     path("api/auth/token/verify/", DocumentedTokenVerifyView.as_view(), name="token_verify"),
 
     path("api/me/preferences/", UserPreferencesView.as_view(), name="user_preferences"),
-    path("api/me/language/", UserLanguageView.as_view(), name="user_language"),
-    path("api/me/timezone/", UserTimezoneView.as_view(), name="user_timezone"),
+    path("api/auth/language/", UserLanguageView.as_view(), name="user_language"),
+    path("api/auth/timezone/", UserTimezoneView.as_view(), name="user_timezone"),
+    path("api/me/language/", UserLanguageView.as_view(), name="user_language_legacy"),
+    path("api/me/timezone/", UserTimezoneView.as_view(), name="user_timezone_legacy"),
 
     path("api/", include(router.urls)),
     path("api/stats/", stats_view, name="stats"),

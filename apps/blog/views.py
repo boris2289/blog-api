@@ -360,7 +360,7 @@ def publish_comments_event(comment):
     payload = {
         "event": "comment_created",
         "post_slug": comment.post.slug,
-        "author_if": comment.author_id,
+        "author_id": comment.author_id,
         "body": comment.body,
     }
     conn.publish("comments", json.dumps(payload, ensure_ascii=False))

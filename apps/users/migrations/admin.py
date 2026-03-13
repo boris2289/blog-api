@@ -1,0 +1,39 @@
+from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+
+from .models import User
+
+
+@admin.register(User)
+class UserAdmin(BaseUserAdmin):
+    list_display = (
+        "id",
+        "email",
+        "first_name",
+        "last_name",
+        "preferred_language",
+        "timezone",
+        "is_staff",
+        "is_active",
+        "date_joined",
+    )
+    list_filter = ("preferred_language", "is_staff", "is_active", "is_superuser")
+    search_fields = ("email", "first_name", "last_name")
+    ordering = ("-date_joined",)
+
+    fieldsets = (
+        (None, {"fields": ("email", "password")}),
+        ("Personal info", {"fields": ("first_name", "last_name", "avatar")}),
+        ("Localization", {"fields": ("preferred_language", "timezone")}),
+        ("Permissions", {"fields": ("is_active", "is_staff", "is_superuser", "groups", "user_permissions")}),
+        ("Important dates", {"fields": ("last_login", "date_joined")}),
+    )
+
+    add_fieldsets = (
+        (None, {
+            "classes": ("wide",),
+            "fields": ("email", "first_name", "last_name", "preferred_language", "timezone", "password1", "password2", "is_staff", "is_active"),
+        }),
+    )
+
+    filter_horizontal = ("groups", "user_permissions")
