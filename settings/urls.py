@@ -13,6 +13,7 @@ from apps.users.views import (
     UserPreferencesView,
     UserTimezoneView,
 )
+from apps.blog.stat_views import stats_view
 
 
 def home(request):
@@ -40,4 +41,5 @@ urlpatterns = [
     path("api/me/timezone/", UserTimezoneView.as_view(), name="user_timezone"),
 
     path("api/", include(router.urls)),
+    path("api/stats/", stats_view, name="stats"),
 ]

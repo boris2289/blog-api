@@ -359,7 +359,8 @@ def publish_comments_event(comment):
     conn = get_redis_connection("default")
     payload = {
         "event": "comment_created",
-        "author": comment.author.email,
-        "created_at": str(comment.created_at),
+        "post_slug": comment.post.slug,
+        "author_if": comment.author_id,
+        "body": comment.body,
     }
-    conn.publish("comments", json.dumps(payload))
+    conn.publish("comments", json.dumps(payload, ensure_ascii=False))
