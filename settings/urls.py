@@ -5,7 +5,7 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, Sp
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenRefreshView, TokenVerifyView
 from apps.users.token_views import DocumentedTokenRefreshView, DocumentedTokenVerifyView
-from apps.blog.views import PostViewSet
+from apps.blog.views import PostViewSet, PostCommentCreateAPIView
 from apps.users.views import (
     CustomTokenView,
     RegisterViewSet,
@@ -44,4 +44,7 @@ urlpatterns = [
 
     path("api/", include(router.urls)),
     path("api/stats/", stats_view, name="stats"),
+
+    path("posts/<slug:slug>/comments/", PostCommentCreateAPIView.as_view(), name="post-comments-create"),
+
 ]

@@ -1,6 +1,8 @@
 import logging
 import json
 
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 from django.core.cache import cache
 from django.utils.decorators import method_decorator
 from django.utils.translation import gettext as _
@@ -19,6 +21,14 @@ from rest_framework.response import Response
 from .models import Post
 from .permissions import IsOwnerorReadOnly
 from .serializers import PostSerializer
+from django.shortcuts import get_object_or_404
+from drf_spectacular.utils import extend_schema
+from rest_framework import permissions, status
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from apps.blog.models import Post
+from apps.blog.serializers import CommentCreateSerializer
 
 logger = logging.getLogger("blog")
 POSTS_LIST_CACHE_TTL = 60
@@ -356,11 +366,59 @@ class PostViewSet(viewsets.ModelViewSet):
 
 
 def publish_comments_event(comment):
-    conn = get_redis_connection("default")
+    channel_layer = get_channel_layer()
+
     payload = {
-        "event": "comment_created",
-        "post_slug": comment.post.slug,
-        "author_id": comment.author_id,
+        "comment_id": comment.id,
+        "author": {
+            "id": comment.author.id,
+            "email": comment.author.email,
+        },
         "body": comment.body,
+        "created_at": comment.created_at.isoformat(),
     }
-    conn.publish("comments", json.dumps(payload, ensure_ascii=False))
+
+    async_to_sync(channel_layer.group_send)(
+        f"post_comments_{comment.post.slug}",
+        {
+            "type": "comment_created",
+            "data": payload,
+        },
+    )
+
+
+@extend_schema(
+    tags=["Comments"],
+    summary="Create comment for a post",
+    description="Creates a comment for a published post and broadcasts it to WebSocket subscribers.",
+    request=CommentCreateSerializer,
+    responses={201: CommentCreateSerializer},
+)
+class PostCommentCreateAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, slug):
+        post = get_object_or_404(Post, slug=slug, status=Post.Choices.PUBLISHED)
+
+        serializer = CommentCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        comment = serializer.save(
+            post=post,
+            author=request.user,
+        )
+
+        publish_comments_event(comment)
+
+        return Response(
+            {
+                "id": comment.id,
+                "author": {
+                    "id": comment.author.id,
+                    "email": comment.author.email,
+                },
+                "body": comment.body,
+                "created_at": comment.created_at.isoformat(),
+            },
+            status=status.HTTP_201_CREATED,
+        )

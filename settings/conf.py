@@ -5,6 +5,8 @@ config = Config(RepositoryEnv("settings/.env"))
 BLOG_ENV_ID = config("BLOG_ENV_ID", default="local")
 SECRET_KEY = config("BLOG_SECRET_KEY")
 DEBUG_FLAG = config("BLOG_DEBUG", default=False, cast=bool)
+CHANNEL_REDIS_HOST = config("127.0.0.1", 6379)
+
 ALLOWED_HOSTS = [
     h.strip()
     for h in config("BLOG_ALLOWED_HOSTS", default="").split(",")

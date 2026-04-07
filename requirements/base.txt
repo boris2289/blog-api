@@ -7,3 +7,5 @@ django-ratelimit
 Pillow
 drf-spectacular
 httpx
+channels
+channels-redis

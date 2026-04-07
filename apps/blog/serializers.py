@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from .models import Category, Post
 from .utils import format_localized_datetime
+from apps.blog.models import Comment
 
 
 class CategoryLocalizedSerializer(serializers.ModelSerializer):
@@ -52,3 +53,10 @@ class PostSerializer(serializers.ModelSerializer):
     def get_updated_at(self, obj):
         request = self.context.get("request")
         return format_localized_datetime(obj.updated_at, request)
+
+
+class CommentCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Comment
+        fields = ("id", "body", "created_at")
+        read_only_fields = ("id", "created_at")

@@ -13,7 +13,7 @@ import logging
 from pathlib import Path
 from datetime import timedelta
 import os
-from .conf import SECRET_KEY, ALLOWED_HOSTS
+from .conf import SECRET_KEY, ALLOWED_HOSTS, CHANNEL_REDIS_HOST
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     'apps.users',
     "drf_spectacular",
     "rest_framework",
+    "channels"
 ]
 
 MIDDLEWARE = [
@@ -287,4 +288,15 @@ CACHES = {
         "LOCATION": "redis://127.0.0.1:6379/1",
         "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
     }
+}
+
+ASGI_APPLICATION = "olympia.routing.application"
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [CHANNEL_REDIS_HOST],
+            "symmetric_encryption_keys": [SECRET_KEY],
+        },
+    },
 }
