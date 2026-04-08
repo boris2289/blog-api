@@ -14,6 +14,7 @@ from apps.users.views import (
     UserTimezoneView,
 )
 from apps.blog.stat_views import stats_view
+from apps.blog.sse import sse_posts_stream_view
 
 
 def home(request):
@@ -46,5 +47,7 @@ urlpatterns = [
     path("api/stats/", stats_view, name="stats"),
 
     path("posts/<slug:slug>/comments/", PostCommentCreateAPIView.as_view(), name="post-comments-create"),
+
+    path("/api/posts/stream/", sse_posts_stream_view, name="posts-stream")
 
 ]

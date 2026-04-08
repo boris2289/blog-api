@@ -29,6 +29,7 @@ from rest_framework.views import APIView
 
 from apps.blog.models import Post
 from apps.blog.serializers import CommentCreateSerializer
+from apps.blog.services import publish_post_sse_event
 
 logger = logging.getLogger("blog")
 POSTS_LIST_CACHE_TTL = 60
@@ -353,11 +354,24 @@ class PostViewSet(viewsets.ModelViewSet):
         post = serializer.save(author=self.request.user)
         invalidate_posts_list_cache()
         logger.info("Post created: %s by %s", post.slug, self.request.user.email)
+        if post.status == post.Choices.PUBLISHED:
+            publish_post_sse_event(post)
 
     def perform_update(self, serializer):
+        old_status = serializer.instance.status
         post = serializer.save()
+
+        became_published = (
+            old_status == Post.Choices.DRAFT
+            and post.status == Post.Choices.PUBLISHED
+        )
+
         invalidate_posts_list_cache()
         logger.info("Post updated: %s", post.slug)
+
+        if became_published:
+            publish_post_sse_event(post)
+
 
     def perform_destroy(self, instance):
         logger.warning("Post deleted: %s by %s", instance.slug, self.request.user.email)

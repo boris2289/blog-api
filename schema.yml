@@ -1,0 +1,1068 @@
+openapi: 3.0.3
+info:
+  title: Blog API
+  version: 2.0.0
+  description: Blog API documentation for homework 2.
+paths:
+  /api/auth/register/:
+    post:
+      operationId: auth_register_create
+      description: Creates a new user account. Authentication is not required. This
+        endpoint validates email uniqueness, password confirmation, language, and
+        timezone. A welcome email is sent using the language selected at registration.
+        Rate limiting is applied.
+      summary: Register a new user
+      tags:
+      - Auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+            examples:
+              RegisterRequest:
+                value:
+                  email: hw2test1@kbtu.kz
+                  first_name: Boris
+                  last_name: Dubovoy
+                  password: testpass123
+                  password_valid: testpass123
+                  preferred_language: ru
+                  timezone: Asia/Almaty
+                summary: Register request
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterSuccess'
+              examples:
+                RegisterResponse:
+                  value:
+                    message: Регистрация прошла успешно.
+                    user:
+                      email: hw2test1@kbtu.kz
+                      first_name: Boris
+                      last_name: Dubovoy
+                      preferred_language: ru
+                      timezone: Asia/Almaty
+                    refresh: jwt-refresh-token
+                    access: jwt-access-token
+                  summary: Register response
+          description: User created successfully.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Register'
+          description: Validation error.
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Too many requests.
+  /api/auth/token/:
+    post:
+      operationId: auth_token_create
+      description: Authenticates a user with email and password and returns JWT access
+        and refresh tokens. Authentication is not required. Rate limiting may apply
+        depending on project settings.
+      summary: Obtain JWT tokens
+      tags:
+      - Auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairRequest'
+            examples:
+              LoginRequest:
+                value:
+                  email: hw2test1@kbtu.kz
+                  password: testpass123
+                summary: Login request
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenPair'
+              examples:
+                LoginResponse:
+                  value:
+                    refresh: jwt-refresh-token
+                    access: jwt-access-token
+                  summary: Login response
+          description: Tokens returned successfully.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Invalid credentials or bad request.
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Too many requests.
+  /api/auth/token/refresh/:
+    post:
+      operationId: auth_token_refresh_create
+      description: Accepts a refresh token and returns a new access token.
+      summary: Refresh JWT access token
+      tags:
+      - Auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequestRequest'
+            examples:
+              RefreshRequest:
+                value:
+                  refresh: jwt-refresh-token
+                summary: Refresh request
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequestRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenPair'
+              examples:
+                RefreshResponse:
+                  value:
+                    access: new-jwt-access-token
+                  summary: Refresh response
+          description: New access token returned.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Invalid token or bad request.
+  /api/auth/token/verify/:
+    post:
+      operationId: auth_token_verify_create
+      description: Checks whether a JWT token is valid.
+      summary: Verify JWT token
+      tags:
+      - Auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenVerifyRequestRequest'
+            examples:
+              VerifyRequest:
+                value:
+                  token: jwt-access-token
+                summary: Verify request
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenVerifyRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenVerifyRequestRequest'
+        required: true
+      responses:
+        '200':
+          description: Token is valid.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Invalid token.
+  /api/me/language/:
+    patch:
+      operationId: me_language_partial_update
+      description: Updates the authenticated user's preferred language. Authentication
+        is required. The saved profile language has the highest priority in future
+        requests.
+      summary: Update preferred language
+      tags:
+      - Auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUserLanguageRequest'
+            examples:
+              LanguageRequest:
+                value:
+                  preferred_language: kk
+                summary: Language request
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUserLanguageRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUserLanguageRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+              examples:
+                LanguageResponse:
+                  value:
+                    message: Таңдаулы тіл сәтті жаңартылды.
+                    preferred_language: kk
+                  summary: Language response
+          description: Language updated successfully.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserLanguage'
+          description: Validation error.
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Authentication required.
+  /api/me/preferences/:
+    get:
+      operationId: me_preferences_retrieve
+      description: Returns the authenticated user's profile preferences including
+        preferred language and timezone. Authentication is required.
+      summary: Get current user preferences
+      tags:
+      - Auth
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreferences'
+              examples:
+                PreferencesResponse:
+                  value:
+                    email: hw2test1@kbtu.kz
+                    first_name: Boris
+                    last_name: Dubovoy
+                    preferred_language: ru
+                    timezone: Asia/Almaty
+                  summary: Preferences response
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Authentication required.
+  /api/me/timezone/:
+    patch:
+      operationId: me_timezone_partial_update
+      description: Updates the authenticated user's timezone using a real IANA timezone
+        identifier. Authentication is required.
+      summary: Update timezone
+      tags:
+      - Auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUserTimezoneRequest'
+            examples:
+              TimezoneRequest:
+                value:
+                  timezone: Asia/Almaty
+                summary: Timezone request
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUserTimezoneRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUserTimezoneRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+              examples:
+                TimezoneResponse:
+                  value:
+                    message: Timezone updated successfully.
+                    timezone: Asia/Almaty
+                  summary: Timezone response
+          description: Timezone updated successfully.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserTimezone'
+          description: Validation error.
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Authentication required.
+  /api/posts/:
+    get:
+      operationId: posts_list
+      description: 'Returns a paginated list of posts. Authentication is not requiredThe
+        response in cached in Redis per active language and page. Examples: English
+        and Russian users receive separate cache entries. Dates and category translations
+        depend on the active language/timezone logic already configured'
+      summary: List published posts
+      parameters:
+      - in: query
+        name: lang
+        schema:
+          type: string
+        description: Optional language override
+      - in: query
+        name: page
+        schema:
+          type: integer
+        description: 'Pagination page number. '
+      tags:
+      - Posts
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPostList'
+              examples:
+                ListPostsResponse:
+                  value:
+                    count: 123
+                    next: http://api.example.org/accounts/?page=4
+                    previous: http://api.example.org/accounts/?page=2
+                    results:
+                    - count: 1
+                      next: null
+                      previous: null
+                      results:
+                      - author: 1
+                        title: My first post
+                        slug: my-first_post
+                        body: Hello from hw1 post
+                        category:
+                          id: 1
+                          slug: news
+                          name: Новости
+                        tags: []
+                        status: published
+                        created_at: 7 march 2026 15:00
+                        updated_at: 7 march 2026 15:10
+                  summary: List posts response
+          description: Published posts list returned succesfully.
+    post:
+      operationId: posts_create
+      description: Creates a new post. Authentication is required. The authenticated
+        user becomes the author automatically. This endpoint invalidates the Redis
+        posts list cache for all languages after a successful write. Rate limiting
+        is applied.
+      summary: Create a post
+      tags:
+      - Posts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostRequest'
+            examples:
+              CreatePostRequest:
+                value:
+                  title: My first post
+                  slug: my-first-post
+                  body: Hello from hw2 post.
+                  category_id: 1
+                  tags: []
+                  status: published
+                summary: Create post request
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PostRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PostRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+              examples:
+                CreatePostResponse:
+                  value:
+                    author: 1
+                    title: My first post
+                    slug: my-first-post
+                    body: Hello from hw2 post.
+                    category:
+                      id: 1
+                      slug: news
+                      name: News
+                    tags: []
+                    status: published
+                    created_at: March 7, 2026, 15:00
+                    updated_at: March 7, 2026, 15:00
+                  summary: Create post response
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+          description: Validation error.
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+          description: Authentication required.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+          description: Permission denied.
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RateLimitError'
+          description: Too many requests.
+  /api/posts/{slug}/:
+    get:
+      operationId: posts_retrieve
+      description: 'Returns one published post by slug. Authentication is not requiredLanguage-sensitive
+        fields such as localized category name and formatted dates depend on active
+        lang/timezone. '
+      summary: Retrieve published post by slug
+      parameters:
+      - in: query
+        name: lang
+        schema:
+          type: string
+        description: Optional language override
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - Posts
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+          description: 'Post not found. '
+    put:
+      operationId: posts_update
+      description: Replaces a post by slug. Authentication is required. Only the owner
+        may modify the post. Any successful write invalidates the Redis posts list
+        cache for all languages.
+      summary: Fully update a post
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - Posts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PostRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PostRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+          description: Validation error.
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+          description: Authentication required.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+          description: Permission denied.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+          description: Post not found.
+    patch:
+      operationId: posts_partial_update
+      description: Updates selected fields of a post by slug. Authentication is required.
+        Only the owner may modify the post. Any successful write invalidates the Redis
+        posts list cache for all languages.
+      summary: Partially update a post
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - Posts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPostRequest'
+            examples:
+              PatchPostRequest:
+                value:
+                  title: My first post updated
+                summary: Patch post request
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPostRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPostRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+              examples:
+                PatchPostResponse:
+                  value:
+                    author: 1
+                    title: My first post updated
+                    slug: my-first-post
+                    body: Hello from hw2 post.
+                    category:
+                      id: 1
+                      slug: news
+                      name: News
+                    tags: []
+                    status: published
+                    created_at: March 7, 2026, 15:00
+                    updated_at: March 7, 2026, 15:10
+                  summary: Patch post response
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+          description: Validation error.
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+          description: Authentication required.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+          description: Permission denied.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+          description: Post not found.
+    delete:
+      operationId: posts_destroy
+      description: Deletes a post by slug. Authentication is required. Only the owner
+        may delete the post. Successful deletion invalidates the Redis posts list
+        cache for all languages.
+      summary: Delete a post
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - Posts
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: Post deleted successfully.
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+          description: Authentication required.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+          description: Permission denied.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+          description: Post not found.
+components:
+  schemas:
+    CategoryLocalized:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        slug:
+          type: string
+          maxLength: 50
+          pattern: ^[-a-zA-Z0-9_]+$
+        name:
+          type: string
+          readOnly: true
+      required:
+      - id
+      - name
+      - slug
+    CategoryLocalizedRequest:
+      type: object
+      properties:
+        slug:
+          type: string
+          minLength: 1
+          maxLength: 50
+          pattern: ^[-a-zA-Z0-9_]+$
+      required:
+      - slug
+    ErrorDetail:
+      type: object
+      properties:
+        detail:
+          type: string
+      required:
+      - detail
+    ForbiddenError:
+      type: object
+      properties:
+        detail:
+          type: string
+      required:
+      - detail
+    Message:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+      - message
+    NotFoundError:
+      type: object
+      properties:
+        detail:
+          type: string
+      required:
+      - detail
+    PaginatedPostList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Post'
+    PatchedPostRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        slug:
+          type: string
+          minLength: 1
+          maxLength: 50
+          pattern: ^[-a-zA-Z0-9_]+$
+        body:
+          type: string
+          minLength: 1
+        category_id:
+          type: integer
+          writeOnly: true
+          nullable: true
+        tags:
+          type: array
+          items:
+            type: integer
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+    PatchedUserLanguageRequest:
+      type: object
+      properties:
+        preferred_language:
+          allOf:
+          - $ref: '#/components/schemas/PreferredLanguageEc6Enum'
+          title: Prefered language
+    PatchedUserTimezoneRequest:
+      type: object
+      properties:
+        timezone:
+          type: string
+          minLength: 1
+    Post:
+      type: object
+      properties:
+        author:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 200
+        slug:
+          type: string
+          maxLength: 50
+          pattern: ^[-a-zA-Z0-9_]+$
+        body:
+          type: string
+        category:
+          allOf:
+          - $ref: '#/components/schemas/CategoryLocalized'
+          readOnly: true
+        tags:
+          type: array
+          items:
+            type: integer
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        created_at:
+          type: string
+          readOnly: true
+        updated_at:
+          type: string
+          readOnly: true
+      required:
+      - author
+      - body
+      - category
+      - created_at
+      - slug
+      - title
+      - updated_at
+    PostRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        slug:
+          type: string
+          minLength: 1
+          maxLength: 50
+          pattern: ^[-a-zA-Z0-9_]+$
+        body:
+          type: string
+          minLength: 1
+        category_id:
+          type: integer
+          writeOnly: true
+          nullable: true
+        tags:
+          type: array
+          items:
+            type: integer
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+      required:
+      - body
+      - slug
+      - title
+    PreferredLanguageEc6Enum:
+      enum:
+      - en
+      - ru
+      - kk
+      type: string
+      description: |-
+        * `en` - en
+        * `ru` - ru
+        * `kk` - kk
+    RateLimitError:
+      type: object
+      properties:
+        detail:
+          type: string
+      required:
+      - detail
+    Register:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        first_name:
+          type: string
+        last_name:
+          type: string
+        preferred_language:
+          $ref: '#/components/schemas/PreferredLanguageEc6Enum'
+        timezone:
+          type: string
+      required:
+      - email
+      - first_name
+      - last_name
+    RegisterRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+        first_name:
+          type: string
+          minLength: 1
+        last_name:
+          type: string
+          minLength: 1
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+        password_valid:
+          type: string
+          writeOnly: true
+          minLength: 1
+        preferred_language:
+          $ref: '#/components/schemas/PreferredLanguageEc6Enum'
+        timezone:
+          type: string
+          minLength: 1
+      required:
+      - email
+      - first_name
+      - last_name
+      - password
+      - password_valid
+    RegisterSuccess:
+      type: object
+      properties:
+        message:
+          type: string
+        user:
+          $ref: '#/components/schemas/UserPreferences'
+        refresh:
+          type: string
+        access:
+          type: string
+      required:
+      - access
+      - message
+      - refresh
+      - user
+    StatusEnum:
+      enum:
+      - draft
+      - published
+      type: string
+      description: |-
+        * `draft` - Draft
+        * `published` - Published
+    TokenObtainPairRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          writeOnly: true
+          minLength: 1
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - email
+      - password
+    TokenPair:
+      type: object
+      properties:
+        refresh:
+          type: string
+        access:
+          type: string
+      required:
+      - access
+      - refresh
+    TokenRefreshRequestRequest:
+      type: object
+      properties:
+        refresh:
+          type: string
+          minLength: 1
+      required:
+      - refresh
+    TokenVerifyRequestRequest:
+      type: object
+      properties:
+        token:
+          type: string
+          minLength: 1
+      required:
+      - token
+    UnauthorizedError:
+      type: object
+      properties:
+        detail:
+          type: string
+      required:
+      - detail
+    UserLanguage:
+      type: object
+      properties:
+        preferred_language:
+          allOf:
+          - $ref: '#/components/schemas/PreferredLanguageEc6Enum'
+          title: Prefered language
+      required:
+      - preferred_language
+    UserPreferences:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        first_name:
+          type: string
+          maxLength: 50
+        last_name:
+          type: string
+          maxLength: 50
+        preferred_language:
+          $ref: '#/components/schemas/UserPreferencesPreferredLanguageEnum'
+        timezone:
+          type: string
+          maxLength: 64
+      required:
+      - email
+      - first_name
+      - last_name
+    UserPreferencesPreferredLanguageEnum:
+      enum:
+      - en
+      - ru
+      - kk
+      type: string
+      description: |-
+        * `en` - English
+        * `ru` - Russian
+        * `kk` - Kazakh
+    UserTimezone:
+      type: object
+      properties:
+        timezone:
+          type: string
+      required:
+      - timezone
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+tags:
+- name: Auth
+  description: Authentication and user registration endpoints.
+- name: Posts
+  description: Blog post endpoints.
+- name: Comments
+  description: Comment endpoints.
+- name: Stats
+  description: Statistics endpoints.
