@@ -42,7 +42,6 @@ class RateLimitErrorSerializer(serializers.Serializer):
 class UnauthorizedErrorSerializer(serializers.Serializer):
     detail = serializers.CharField()
 
-
 class ForbiddenErrorSerializer(serializers.Serializer):
     detail = serializers.CharField()
 

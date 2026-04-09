@@ -13,6 +13,11 @@ from apps.users.views import (
     UserPreferencesView,
     UserTimezoneView,
 )
+from apps.notifications.views import (
+    NotificationCountView,
+    NotificationListView,
+    NotificationReadAllView
+)
 from apps.blog.stat_views import stats_view
 from apps.blog.sse import sse_posts_stream_view
 
@@ -48,6 +53,10 @@ urlpatterns = [
 
     path("posts/<slug:slug>/comments/", PostCommentCreateAPIView.as_view(), name="post-comments-create"),
 
-    path("/api/posts/stream/", sse_posts_stream_view, name="posts-stream")
+    path("/api/posts/stream/", sse_posts_stream_view, name="posts-stream"),
+
+path("/api/notifications/", NotificationListView.as_view(), name="notifications-list"),
+path("/api/notifications/read/", NotificationReadAllView.as_view(), name="notifications-read"),
+path("/api/notifications/count/", NotificationCountView.as_view(), name="notifications-count")
 
 ]
