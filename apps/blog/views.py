@@ -30,6 +30,7 @@ from rest_framework.views import APIView
 from apps.blog.models import Post
 from apps.blog.serializers import CommentCreateSerializer
 from apps.blog.services import publish_post_sse_event
+from apps.notifications.tasks import process_new_comment
 
 logger = logging.getLogger("blog")
 POSTS_LIST_CACHE_TTL = 60
@@ -41,6 +42,7 @@ class RateLimitErrorSerializer(serializers.Serializer):
 
 class UnauthorizedErrorSerializer(serializers.Serializer):
     detail = serializers.CharField()
+
 
 class ForbiddenErrorSerializer(serializers.Serializer):
     detail = serializers.CharField()
@@ -63,6 +65,27 @@ def invalidate_posts_list_cache():
         for language in ("en", "ru", "kk"):
             for page in range(1, 21):
                 cache.delete(f"posts:list:published:{language}:page:{page}")
+
+
+def send_post_published_event(post):
+    channel_layer = get_channel_layer()
+
+    async_to_sync(channel_layer.group_send)(
+        "posts_published",
+        {
+            "type": "post.published",
+            "data": {
+                "post_id": post.id,
+                "title": post.title,
+                "slug": post.slug,
+                "author": {
+                    "id": post.author.id,
+                    "email": post.author.email
+                },
+                "published_at": post.publish_at.isoformat()
+            },
+        }
+    )
 
 
 @extend_schema_view(
@@ -351,6 +374,10 @@ class PostViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         post = serializer.save(author=self.request.user)
+
+        if post.status == Post.Choices.PUBLISHED:
+            send_post_published_event(post)
+
         invalidate_posts_list_cache()
         logger.info("Post created: %s by %s", post.slug, self.request.user.email)
         if post.status == post.Choices.PUBLISHED:
@@ -360,9 +387,12 @@ class PostViewSet(viewsets.ModelViewSet):
         old_status = serializer.instance.status
         post = serializer.save()
 
+        if post.status == Post.Choices.PUBLISHED:
+            send_post_published_event(post)
+
         became_published = (
-            old_status == Post.Choices.DRAFT
-            and post.status == Post.Choices.PUBLISHED
+                old_status == Post.Choices.DRAFT
+                and post.status == Post.Choices.PUBLISHED
         )
 
         invalidate_posts_list_cache()
@@ -370,7 +400,6 @@ class PostViewSet(viewsets.ModelViewSet):
 
         if became_published:
             publish_post_sse_event(post)
-
 
     def perform_destroy(self, instance):
         logger.warning("Post deleted: %s by %s", instance.slug, self.request.user.email)
@@ -420,6 +449,7 @@ class PostCommentCreateAPIView(APIView):
             post=post,
             author=request.user,
         )
+        process_new_comment.delay(comment.id)
 
         publish_comments_event(comment)
 

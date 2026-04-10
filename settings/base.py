@@ -13,7 +13,8 @@ import logging
 from pathlib import Path
 from datetime import timedelta
 import os
-from .conf import SECRET_KEY, ALLOWED_HOSTS, CHANNEL_REDIS_HOST
+from .conf import SECRET_KEY, CHANNEL_REDIS_HOST, REDIS_HOST, REDIS_PORT, REDIS_CELERY_DB
+from celery.schedules import crontab
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -36,7 +37,9 @@ INSTALLED_APPS = [
     "apps.notifications.apps.NotificationsConfig",
     "drf_spectacular",
     "rest_framework",
-    "channels"
+    "channels",
+    "celery",
+    "flower"
 ]
 
 MIDDLEWARE = [
@@ -299,5 +302,16 @@ CHANNEL_LAYERS = {
             "hosts": [CHANNEL_REDIS_HOST],
             "symmetric_encryption_keys": [SECRET_KEY],
         },
+    },
+}
+
+_celery_redis_url = f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_CELERY_DB}"
+CELERY_BROKER_URL = _celery_redis_url
+CELERY_RESULT_BACKEND = _celery_redis_url
+
+CELERY_BEAT_SCHEDULE = {
+    "publish-scheduled-posts-every-minute": {
+        "task": "apps.notifications.tasks.publish_scheduled_posts",
+        "schedule": crontab(minute='*')
     },
 }

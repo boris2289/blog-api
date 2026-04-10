@@ -57,6 +57,7 @@ class Post(models.Model):
     class Choices(TextChoices):
         DRAFT = "draft", _("Draft")
         PUBLISHED = "published", _("Published")
+        SCHEDULED = "scheduled"
 
     author = ForeignKey(User, on_delete=CASCADE, verbose_name=_("Author"))
     title = CharField(max_length=200, verbose_name=_("Title"))
@@ -67,6 +68,7 @@ class Post(models.Model):
     status = CharField(max_length=10, choices=Choices.choices, default=Choices.DRAFT, verbose_name=_("Status"))
     created_at = DateTimeField(auto_now_add=True, verbose_name=_("Created at"))
     updated_at = DateTimeField(auto_now=True, verbose_name=_("Updated at"))
+    publish_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return self.title
