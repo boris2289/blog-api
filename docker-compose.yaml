@@ -1,0 +1,70 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: blog_web
+    command: daphne -b 0.0.0.0 -p 8000 settings.asgi:application
+    ports:
+      - "8000:8000"
+    env_file:
+      - settings/.env
+    volumes:
+      - sqlite_data:/app/data
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: blog_redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+  celery_worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: blog_celery_worker
+    command: celery -A settings worker -l info
+    env_file:
+      - settings/.env
+    volumes:
+      - sqlite_data:/app/data
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  celery_beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: blog_celery_beat
+    command: celery -A settings beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    env_file:
+      - settings/.env
+    volumes:
+      - sqlite_data:/app/data
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  flower:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: blog_flower
+    command: >
+      sh -c 'celery -A settings flower --port=5555
+      --basic_auth="$$BLOG_FLOWER_USER:$$BLOG_FLOWER_PASSWORD"'
+    ports:
+      - "5555:5555"
+    env_file:
+      - settings/.env
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+volumes:
+  sqlite_data:

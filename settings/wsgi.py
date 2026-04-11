@@ -9,8 +9,12 @@ https://docs.djangoproject.com/en/5.1/howto/deployment/wsgi/
 
 import os
 
-from django.core.wsgi import get_wsgi_application
+env_id = os.getenv("BLOG_ENV_ID", "local").lower().strip()
+if env_id == "prod":
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "settings.env.prod")
+else:
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "settings.env.local")
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "settings.settings")
+from django.core.wsgi import get_wsgi_application
 
 application = get_wsgi_application()

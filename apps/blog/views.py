@@ -1,5 +1,4 @@
 import logging
-import json
 
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
@@ -7,18 +6,14 @@ from django.core.cache import cache
 from django.utils.decorators import method_decorator
 from django.utils.translation import gettext as _
 from django_ratelimit.decorators import ratelimit
-from django_redis import get_redis_connection
 from drf_spectacular.utils import (
     OpenApiExample,
     OpenApiParameter,
     OpenApiResponse,
-    extend_schema,
     extend_schema_view
 )
-from rest_framework import permissions, viewsets, serializers
-from rest_framework.response import Response
+from rest_framework import viewsets, serializers
 
-from .models import Post
 from .permissions import IsOwnerorReadOnly
 from .serializers import PostSerializer
 from django.shortcuts import get_object_or_404
@@ -30,7 +25,7 @@ from rest_framework.views import APIView
 from apps.blog.models import Post
 from apps.blog.serializers import CommentCreateSerializer
 from apps.blog.services import publish_post_sse_event
-from apps.notifications.tasks import process_new_comment
+from apps.notifications.tasks import process_new_comment, invalidate_post_cache
 
 logger = logging.getLogger("blog")
 POSTS_LIST_CACHE_TTL = 60
@@ -378,7 +373,8 @@ class PostViewSet(viewsets.ModelViewSet):
         if post.status == Post.Choices.PUBLISHED:
             send_post_published_event(post)
 
-        invalidate_posts_list_cache()
+        # invalidate_posts_list_cache()
+        invalidate_post_cache.delay()
         logger.info("Post created: %s by %s", post.slug, self.request.user.email)
         if post.status == post.Choices.PUBLISHED:
             publish_post_sse_event(post)
@@ -395,7 +391,8 @@ class PostViewSet(viewsets.ModelViewSet):
                 and post.status == Post.Choices.PUBLISHED
         )
 
-        invalidate_posts_list_cache()
+        # invalidate_posts_list_cache()
+        invalidate_post_cache.delay()
         logger.info("Post updated: %s", post.slug)
 
         if became_published:
@@ -404,8 +401,8 @@ class PostViewSet(viewsets.ModelViewSet):
     def perform_destroy(self, instance):
         logger.warning("Post deleted: %s by %s", instance.slug, self.request.user.email)
         instance.delete()
-        invalidate_posts_list_cache()
-
+        # invalidate_posts_list_cache()
+        invalidate_post_cache.delay()
 
 def publish_comments_event(comment):
     channel_layer = get_channel_layer()

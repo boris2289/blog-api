@@ -53,10 +53,10 @@ urlpatterns = [
 
     path("posts/<slug:slug>/comments/", PostCommentCreateAPIView.as_view(), name="post-comments-create"),
 
-    path("/api/posts/stream/", sse_posts_stream_view, name="posts-stream"),
+    path("api/posts/stream/", sse_posts_stream_view, name="posts-stream"),
 
-path("/api/notifications/", NotificationListView.as_view(), name="notifications-list"),
-path("/api/notifications/read/", NotificationReadAllView.as_view(), name="notifications-read"),
-path("/api/notifications/count/", NotificationCountView.as_view(), name="notifications-count")
+    path("api/notifications/", NotificationListView.as_view(), name="notifications-list"),
+    path("api/notifications/read/", NotificationReadAllView.as_view(), name="notifications-read"),
+    path("api/notifications/count/", NotificationCountView.as_view(), name="notifications-count")
 
 ]

@@ -38,8 +38,7 @@ INSTALLED_APPS = [
     "drf_spectacular",
     "rest_framework",
     "channels",
-    "celery",
-    "flower"
+    "django_celery_beat",
 ]
 
 MIDDLEWARE = [
@@ -76,12 +75,12 @@ WSGI_APPLICATION = "settings.wsgi.application"
 # # Database
 # # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 #
-# DATABASES = {
-#     "default": {
-#         "ENGINE": "django.db.backends.sqlite3",
-#         "NAME": BASE_DIR / "db.sqlite3",
-#     }
-# }
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
+    }
+}
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
@@ -289,18 +288,19 @@ LOGGING = {
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://127.0.0.1:6379/1",
-        "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
+        "LOCATION": f"redis://{REDIS_HOST}:{REDIS_PORT}/1",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        },
     }
 }
 
-ASGI_APPLICATION = "olympia.routing.application"
+ASGI_APPLICATION = "settings.asgi.application"
 CHANNEL_LAYERS = {
-    'default': {
-        'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        'CONFIG': {
-            "hosts": [CHANNEL_REDIS_HOST],
-            "symmetric_encryption_keys": [SECRET_KEY],
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [(REDIS_HOST, REDIS_PORT)],
         },
     },
 }
@@ -310,8 +310,19 @@ CELERY_BROKER_URL = _celery_redis_url
 CELERY_RESULT_BACKEND = _celery_redis_url
 
 CELERY_BEAT_SCHEDULE = {
+    # Every 1 minute
     "publish-scheduled-posts-every-minute": {
         "task": "apps.notifications.tasks.publish_scheduled_posts",
         "schedule": crontab(minute='*')
+    },
+    # Daily at 03:00
+    "clear-expired-notifications": {
+        "task": "apps.notifications.tasks.clear_expired_notifications",
+        "schedule": crontab(hour=3, minute=0)
+    },
+    # Daily at 00:00
+    "generate-daily-stats": {
+        "task": "apps.notifications.tasks.generate_daily_stats",
+        "schedule": crontab(hour=0, minute=0)
     },
 }

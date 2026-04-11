@@ -1,11 +1,18 @@
+import logging
+from datetime import timedelta
+
 from celery import shared_task
 from asgiref.sync import async_to_sync
 from django.utils import timezone
 from channels.layers import get_channel_layer
+from django.core.cache import cache
 
 from apps.notifications.models import Notification
 from apps.blog.models import Comment, Post
+from apps.users.models import User
+from apps.users.services import send_welcome_email
 
+logger = logging.getLogger(__name__)
 
 @shared_task(
     autoretry_for=(Exception,),
@@ -64,4 +71,55 @@ def publish_scheduled_posts():
                 },
             }
         )
+
+@shared_task(
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+    max_retries=3
+)
+def clear_expired_notifications():
+    threshold = timezone.now() - timedelta(days=30)
+    Notification.objects.filter(created_at__lt=threshold).delete()
+
+@shared_task(
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+    max_retries=3
+)
+def generate_dialy_stats():
+    now = timezone.now()
+    since = now - timedelta(hours=24)
+
+    posts_count = Post.objects.filter(created_at__gte=since).count()
+    comments_count = Comment.objects.filter(created_at__gte=since).count()
+    users_count = User.objects.filter(date_joined__gre=since).count()
+
+    logger.info(
+        "Dialy stats: posts = %s, comments = %s, users = %s",
+        posts_count, comments_count, users_count
+    )
+
+@shared_task(
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+    max_retries=3
+)
+def send_welcome_email_task(user: User):
+    # Добавляем ретраи так как отправка емейл может сломаться из за ошибки протоколов или соединения
+    if not user:
+        return
+    send_welcome_email(user)
+
+@shared_task(
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+    max_retries=3
+)
+def invalidate_post_cache():
+    # Добавляем ретраи так как кэш может быть недоступен временно
+    cache.delete("posts_list")
+
+
+
+
 

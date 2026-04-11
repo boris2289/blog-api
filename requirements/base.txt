@@ -9,3 +9,7 @@ drf-spectacular
 httpx
 channels
 channels-redis
+daphne
+celery
+flower
+django-celery-beat

@@ -19,6 +19,7 @@ from .serializers import (
     UserTimezoneSerializer,
 )
 from .services import send_welcome_email
+from apps.notifications.tasks import send_welcome_email_task
 
 logger = logging.getLogger("users")
 
@@ -117,7 +118,7 @@ class RegisterViewSet(viewsets.ViewSet):
         serializer.is_valid(raise_exception=True)
 
         user = serializer.save()
-        send_welcome_email(user)
+        send_welcome_email_task(user)
 
         logger.info("User registered successfully: %s", user.email)
 
