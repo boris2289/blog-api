@@ -13,3 +13,4 @@ daphne
 celery
 flower
 django-celery-beat
+psycopg2-binary

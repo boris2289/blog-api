@@ -13,3 +13,19 @@ DATABASES = {
         "PORT": DB_PORT,
     }
 }
+
+ALLOWED_HOSTS = [
+
+    host.strip()
+
+    for host in os.getenv(
+
+        "BLOG_ALLOWED_HOSTS",
+
+        "localhost,127.0.0.1,0.0.0.0,web,nginx"
+
+    ).split(",")
+
+    if host.strip()
+
+]

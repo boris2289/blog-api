@@ -13,7 +13,7 @@ import logging
 from pathlib import Path
 from datetime import timedelta
 import os
-from .conf import SECRET_KEY, CHANNEL_REDIS_HOST, REDIS_HOST, REDIS_PORT, REDIS_CELERY_DB
+from .conf import SECRET_KEY, CHANNEL_REDIS_HOST, REDIS_HOST, REDIS_PORT, REDIS_CELERY_DB, DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT
 from celery.schedules import crontab
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -77,8 +77,12 @@ WSGI_APPLICATION = "settings.wsgi.application"
 #
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": DB_NAME,
+        "USER": DB_USER,
+        "PASSWORD": DB_PASSWORD,
+        "HOST": DB_HOST,
+        "PORT": DB_PORT,
     }
 }
 
@@ -151,9 +155,11 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 

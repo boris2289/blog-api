@@ -26,4 +26,4 @@ RUN chmod +x /app/scripts/entrypoint.sh
 
 ENTRYPOINT ["/app/scripts/entrypoint.sh"]
 
-USER boris
+#USER boris

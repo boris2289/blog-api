@@ -120,6 +120,3 @@ def invalidate_post_cache():
     cache.delete("posts_list")
 
 
-
-
-
